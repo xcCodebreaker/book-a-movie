@@ -2,7 +2,7 @@
 /*
 Plugin Name: Book a movie
 Description: A very simple movie theatre booking system.
-Version: 1.2
+Version: 1.3
 Author: Abdullah
 */
 
@@ -113,3 +113,74 @@ function smb_manage_movies_page() {
     }
     echo "</div>";
 }
+
+// Booking form
+function smb_booking_form() {
+    global $wpdb;
+    $msg = "";
+
+    if ($_POST && isset($_POST['smb_book'])) {
+        $wpdb->insert(
+            $wpdb->prefix . "bookings",
+            [
+                "movie_id" => intval($_POST['movie_id']),
+                "email" => sanitize_email($_POST['email']),
+                "seats" => intval($_POST['seats'])
+            ]
+        );
+        $msg = "<p style='color:green;'>Booking successful!</p>";
+    }
+
+    $movies = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}movies");
+    if (!$movies) return "<p>No movies available for booking.</p>";
+
+    $form = "$msg<form method='POST'>
+        <label>Select Movie:</label><br>
+        <select name='movie_id'>";
+    foreach ($movies as $m) {
+        $form .= "<option value='{$m->id}'>{$m->title} - {$m->showtime}</option>";
+    }
+    $form .= "</select><br><br>
+        <label>Email:</label><br>
+        <input type='email' name='email' required><br><br>
+        <label>Seats:</label><br>
+        <input type='number' name='seats' min='1' value='1' required><br><br>
+        <button type='submit' name='smb_book'>Book Now</button>
+    </form>";
+    return $form;
+}
+add_shortcode('booking_form', 'smb_booking_form');
+
+// Booking history for users
+function smb_profile() {
+    global $wpdb;
+    $out = "";
+
+    if ($_POST && isset($_POST['smb_check'])) {
+        $email = sanitize_email($_POST['email']);
+        $bookings = $wpdb->get_results(
+            $wpdb->prepare("SELECT b.id, m.title, m.showtime, b.seats 
+                            FROM {$wpdb->prefix}bookings b
+                            JOIN {$wpdb->prefix}movies m ON b.movie_id=m.id
+                            WHERE b.email=%s", $email)
+        );
+        if ($bookings) {
+            $out .= "<h3>Your Bookings</h3><ul>";
+            foreach ($bookings as $b) {
+                $out .= "<li>{$b->title} ({$b->showtime}) - Seats: {$b->seats}</li>";
+            }
+            $out .= "</ul>";
+        } else {
+            $out .= "<p>No bookings found for $email</p>";
+        }
+    }
+
+    $out .= "<form method='POST'>
+        <label>Enter Email to See Bookings:</label><br>
+        <input type='email' name='email' required>
+        <button type='submit' name='smb_check'>Check</button>
+    </form>";
+
+    return $out;
+}
+add_shortcode('profile', 'smb_profile');
