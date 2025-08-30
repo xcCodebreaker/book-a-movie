@@ -184,3 +184,40 @@ function smb_profile() {
     return $out;
 }
 add_shortcode('profile', 'smb_profile');
+
+// Admin: View bookings
+function smb_view_bookings_page() {
+    global $wpdb;
+
+    $bookings = $wpdb->get_results(
+        "SELECT b.id, b.email, b.seats, m.title, m.showtime
+         FROM {$wpdb->prefix}bookings b
+         JOIN {$wpdb->prefix}movies m ON b.movie_id = m.id
+         ORDER BY b.id DESC"
+    );
+
+    echo "<div class='wrap'><h2>All Bookings</h2>";
+    if ($bookings) {
+        echo "<table class='widefat fixed'>
+            <thead><tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Movie</th>
+                <th>Showtime</th>
+                <th>Seats</th>
+            </tr></thead><tbody>";
+        foreach ($bookings as $b) {
+            echo "<tr>
+                <td>" . esc_html($b->id) . "</td>
+                <td>" . esc_html($b->email) . "</td>
+                <td>" . esc_html($b->title) . "</td>
+                <td>" . esc_html($b->showtime) . "</td>
+                <td>" . esc_html($b->seats) . "</td>
+            </tr>";
+        }
+        echo "</tbody></table>";
+    } else {
+        echo "<p>No bookings yet.</p>";
+    }
+    echo "</div>";
+}
