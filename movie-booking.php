@@ -2,7 +2,7 @@
 /*
 Plugin Name: Book a movie
 Description: A very simple movie theatre booking system.
-Version: 1.4
+Version: 1.5
 Author: Abdullah
 */
 
