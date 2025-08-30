@@ -189,6 +189,14 @@ add_shortcode('profile', 'smb_profile');
 function smb_view_bookings_page() {
     global $wpdb;
 
+    if (isset($_GET['delete_booking'])) {
+        $del_id = intval($_GET['delete_booking']);
+        if ($del_id && isset($_GET['_wpnonce']) && wp_verify_nonce($_GET['_wpnonce'], 'smb_delete_booking_' . $del_id)) {
+            $wpdb->delete($wpdb->prefix . "bookings", ["id" => $del_id]);
+            echo "<div class='updated'><p>Booking deleted successfully.</p></div>";
+        }
+    }
+
     $bookings = $wpdb->get_results(
         "SELECT b.id, b.email, b.seats, m.title, m.showtime
          FROM {$wpdb->prefix}bookings b
@@ -205,14 +213,17 @@ function smb_view_bookings_page() {
                 <th>Movie</th>
                 <th>Showtime</th>
                 <th>Seats</th>
+                <th>Action</th>
             </tr></thead><tbody>";
         foreach ($bookings as $b) {
+            $delete_url = wp_nonce_url(admin_url("admin.php?page=smb_view_bookings&delete_booking={$b->id}"), 'smb_delete_booking_' . $b->id);
             echo "<tr>
                 <td>" . esc_html($b->id) . "</td>
                 <td>" . esc_html($b->email) . "</td>
                 <td>" . esc_html($b->title) . "</td>
                 <td>" . esc_html($b->showtime) . "</td>
                 <td>" . esc_html($b->seats) . "</td>
+                <td><a href='" . esc_url($delete_url) . "' class='button button-danger' onclick='return confirm(\"Are you sure you want to delete this booking?\");'>Delete</a></td>
             </tr>";
         }
         echo "</tbody></table>";
@@ -221,3 +232,4 @@ function smb_view_bookings_page() {
     }
     echo "</div>";
 }
+
